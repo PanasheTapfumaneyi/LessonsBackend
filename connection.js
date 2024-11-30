@@ -30,7 +30,7 @@ async function connectDB() {
   try {
     client.connect();
     console.log('Connected to MongoDB');
-    db1 = client.db('Kitten');
+    db1 = client.db('lessons_booking');
   } catch (err) {
     console.error('MongoDB connection error:', err);
   }
@@ -49,6 +49,16 @@ app.param('collectionName', async function(req, res, next, collectionName) {
 // Ensure this route is defined after the middleware app.param
 // get all data from our collection in Mongodb
 app.get('/collections/:collectionName', async function(req, res, next) {
+    try{
+        const results = await req.collection.find({}).toArray();
+
+        console.log(results)
+
+        res.json(results)
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
     
 });
 
@@ -82,6 +92,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(4000, () => {
+    console.log('Server is running on port 4000');
   });
