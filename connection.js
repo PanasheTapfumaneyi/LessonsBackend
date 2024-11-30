@@ -145,12 +145,12 @@ app.put('/collections/:collectionName/:id', async function(req, res, next) {
         console.log(req.params.id);
 
         const results = await req.collection.updateOne({_id: new ObjectId(req.params.id)},
-        
+        {$set:req.body}
     );
 
         console.log(results)
 
-        res.json((results.deletedCount === 1) ? {msg: "success"} : {msg: "Error"})
+        res.json((results.matchedCount === 1) ? {msg: "success"} : {msg: "Error"})
     }catch(err){
         console.error("Error fetching: ", err.messafe)
         next(err)
