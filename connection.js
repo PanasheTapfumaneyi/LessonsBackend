@@ -157,6 +157,50 @@ app.put('/collections/:collectionName/:id', async function(req, res, next) {
     }
 });
 
+// Save an order and update inventory
+app.post("collections/orders", async (req, res) => {
+    const { name, phone, cart } = req.body;
+
+    if (!name || !phone || !cart || !Array.isArray(cart) || cart.length === 0) {
+        return res.status(400).send({ error: "Invalid order data" });
+    }
+
+    try {
+        // Save the order to the "orders" collection
+        const order = {
+            customerName: name,
+            customerPhone: phone,
+            lessons: cart,
+            orderDate: new Date()
+        };
+        const ordersCollection = db.collection("orders");
+        const lessonsCollection = db.collection("lessons");
+
+        // Insert the order
+        await ordersCollection.insertOne(order);
+
+    // Update the availability of lessons
+    for (const lessonId of cart) {
+        const lessonObjectId = new ObjectId(lessonId);
+
+        const updateResult = await lessonsCollection.updateOne(
+            { _id: lessonObjectId, availableInventory: { $gt: 0 } },
+            { $inc: { availableInventory: -1 } }
+        );
+
+        if (updateResult.matchedCount === 0) {
+            return res.status(400).send({ error: `Lesson ${lessonId} is out of stock` });
+        }
+    }
+
+
+        res.status(200).send({ message: "Order placed successfully" });
+    } catch (error) {
+        console.error("Error placing order:", error);
+        res.status(500).send({ error: "Failed to place order" });
+    }
+});
+
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
     res.status(500).json({ error: 'An error occurred' });
