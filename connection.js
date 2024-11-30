@@ -63,27 +63,98 @@ app.get('/collections/:collectionName', async function(req, res, next) {
 });
 
 app.get('/collections1/:collectionName', async function(req, res, next) {
- 
+    try{
+        const results = await req.collection.find({}, {limit:3, sort: {price:-1}}).toArray();
+
+        console.log(results)
+
+        res.json(results)
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
 });
 
 app.get('/collections/:collectionName/:max/:sortAspect/:sortAscDesc', async function(req, res, next){
-    
+    try{
+
+            // TODO: Validate params
+    var max = parseInt(req.params.max, 10); // base 10
+    let sortDirection = 1;
+    if (req.params.sortAscDesc === "desc") {
+    sortDirection = -1;
+    }
+        const results = await req.collection.find({}, {limit:3, sort: {[req.params.sortAspect]: sortDirection}}).toArray();
+
+        console.log(results)
+
+        res.json(results)
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
 });
 
 app.get('/collections/:collectionName/:id' , async function(req, res, next) {
-    
+    try{
+        const results = await req.collection.findOne({_id:new ObjectId(req.params.id)});
+
+        console.log(results)
+
+        res.json(results)
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
 });
 
 app.post('/collections/:collectionName', async function(req, res, next) {
-    
+    try{
+
+        console.log(req.body);
+
+        const results = await req.collection.insertOne(req.body);
+
+
+        console.log(results)
+
+        res.json(results)
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
 });
 
 app.delete('/collections/:collectionName/:id', async function(req, res, next) {
-    
+    try{
+        console.log(req.params.id);
+
+        const results = await req.collection.deleteOne({_id: new ObjectId(req.params.id)});
+
+        console.log(results)
+
+        res.json((results.deletedCount === 1) ? {msg: "success"} : {msg: "Error"})
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
 });
 
 app.put('/collections/:collectionName/:id', async function(req, res, next) {
+    try{
+        console.log(req.params.id);
 
+        const results = await req.collection.updateOne({_id: new ObjectId(req.params.id)},
+        
+    );
+
+        console.log(results)
+
+        res.json((results.deletedCount === 1) ? {msg: "success"} : {msg: "Error"})
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
 });
 
 app.use((err, req, res, next) => {
