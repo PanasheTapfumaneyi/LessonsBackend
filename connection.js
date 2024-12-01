@@ -108,22 +108,22 @@ app.get('/collections/:collectionName/:id' , async function(req, res, next) {
     }
 });
 
-// app.post('/collections/:collectionName', async function(req, res, next) {
-//     try{
+app.post('/collections/:collectionName', async function(req, res, next) {
+    try{
 
-//         console.log(req.body);
+        console.log(req.body);
 
-//         const results = await req.collection.insertOne(req.body);
+        const results = await req.collection.insertOne(req.body);
 
 
-//         console.log(results)
+        console.log(results)
 
-//         res.json(results)
-//     }catch(err){
-//         console.error("Error fetching: ", err.messafe)
-//         next(err)
-//     }
-// });
+        res.json(results)
+    }catch(err){
+        console.error("Error fetching: ", err.messafe)
+        next(err)
+    }
+});
 
 app.delete('/collections/:collectionName/:id', async function(req, res, next) {
     try{
