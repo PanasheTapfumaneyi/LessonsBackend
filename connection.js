@@ -46,6 +46,13 @@ app.param('collectionName', async function(req, res, next, collectionName) {
     next();
 });
 
+// Logger middleware
+app.use((req, res, next) => {
+    const logMessage = `[${new Date().toISOString()}] ${req.method} ${req.url}`;
+    console.log(logMessage);
+    next(); // Proceed to the next middleware or route handler
+});
+
 // Ensure this route is defined after the middleware app.param
 // get all data from our collection in Mongodb
 app.get('/collections/:collectionName', async function(req, res, next) {
