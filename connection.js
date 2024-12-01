@@ -108,22 +108,22 @@ app.get('/collections/:collectionName/:id' , async function(req, res, next) {
     }
 });
 
-app.post('/collections/:collectionName', async function(req, res, next) {
-    try{
+// app.post('/collections/:collectionName', async function(req, res, next) {
+//     try{
 
-        console.log(req.body);
+//         console.log(req.body);
 
-        const results = await req.collection.insertOne(req.body);
+//         const results = await req.collection.insertOne(req.body);
 
 
-        console.log(results)
+//         console.log(results)
 
-        res.json(results)
-    }catch(err){
-        console.error("Error fetching: ", err.messafe)
-        next(err)
-    }
-});
+//         res.json(results)
+//     }catch(err){
+//         console.error("Error fetching: ", err.messafe)
+//         next(err)
+//     }
+// });
 
 app.delete('/collections/:collectionName/:id', async function(req, res, next) {
     try{
@@ -157,42 +157,139 @@ app.put('/collections/:collectionName/:id', async function(req, res, next) {
     }
 });
 
-// Save an order and update inventory
-app.post("collections/orders", async (req, res) => {
+// // Save an order and update inventory
+// app.post("collections/orders", async (req, res) => {
+//     const { name, phone, cart } = req.body;
+
+//     if (!name || !phone || !cart || !Array.isArray(cart) || cart.length === 0) {
+//         return res.status(400).send({ error: "Invalid order data" });
+//     }
+
+//     try {
+//         // Save the order to the "orders" collection
+//         const order = {
+//             customerName: name,
+//             customerPhone: phone,
+//             lessons: cart,
+//             orderDate: new Date()
+//         };
+//         const ordersCollection = db.collection("orders");
+//         const lessonsCollection = db.collection("lessons");
+
+
+//                 // Check connection to lessonsCollection
+//                 const testLesson = await lessonsCollection.findOne({id: 2});
+//                 if (testLesson) {
+//                     console.log("Connection to lessonsCollection is working:", testLesson);
+//                 } else {
+//                     console.error("Failed to fetch a document from lessonsCollection.");
+//                 }
+//         // Insert the order
+//         await ordersCollection.insertOne(order);
+
+//                 // Loop through each lesson in the cart and update the inventory
+// // Loop through each lesson in the cart and update the inventory
+//     for (const lessonId of cart) {
+//         try {
+//             console.log(`Processing lesson ID: ${lessonId}`);
+//             const lesson = await lessonsCollection.findOne({ id: lessonId }); // Use 'id' instead of '_id'
+//             if (lesson) {
+//                 if (lesson.availableInventory > 0) {
+//                     // Reduce available inventory by 1
+//                     const result = await lessonsCollection.updateOne(
+//                         { id: lessonId }, // Use 'id' field to search
+//                         { $inc: { availableInventory: -1 } }
+//                     );
+
+//                     console.log(`Update result for lesson ID ${lessonId}:`, result);
+
+//                     if (result.modifiedCount === 0) {
+//                         console.error(`Failed to update inventory for lesson ID: ${lessonId}`);
+//                     }
+//                 } else {
+//                     console.error(`Lesson with ID ${lessonId} is out of stock.`);
+//                 }
+//             } else {
+//                 console.error(`Lesson with ID ${lessonId} not found.`);
+//             }
+//         } catch (error) {
+//             console.error(`Error updating inventory for lesson ID ${lessonId}:`, error.message);
+//         }
+//     }
+
+    
+
+
+//         res.status(200).send({ message: "Order placed successfully" });
+//     } catch (error) {
+//         console.error("Error placing order:", error);
+//         res.status(500).send({ error: "Failed to place order" });
+//     }
+// });
+
+app.post("/collections/orders", async (req, res) => {
+    console.log("Received request to place an order");
+
     const { name, phone, cart } = req.body;
 
     if (!name || !phone || !cart || !Array.isArray(cart) || cart.length === 0) {
+        console.error("Invalid order data");
         return res.status(400).send({ error: "Invalid order data" });
     }
 
     try {
+        console.log("Connecting to database...");
+        const ordersCollection = db1.collection("orders");
+        const lessonsCollection = db1.collection("lessons");
+
+        // Check connection to lessonsCollection
+        const testLesson = await lessonsCollection.findOne({ id: 3 });
+        if (testLesson) {
+            console.log("Connection to lessonsCollection is working:", testLesson);
+        } else {
+            console.error("Failed to fetch a document from lessonsCollection.");
+        }
+
         // Save the order to the "orders" collection
         const order = {
             customerName: name,
             customerPhone: phone,
             lessons: cart,
-            orderDate: new Date()
         };
-        const ordersCollection = db.collection("orders");
-        const lessonsCollection = db.collection("lessons");
 
-        // Insert the order
+        console.log("Inserting order:", order);
         await ordersCollection.insertOne(order);
 
-    // Update the availability of lessons
-    for (const lessonId of cart) {
-        const lessonObjectId = new ObjectId(lessonId);
+        // Loop through each lesson in the cart and update the inventory
+        for (const lessonId of cart) {
+            try {
+                console.log(`Processing lesson ID: ${lessonId}`);
+                const lesson = await lessonsCollection.findOne({ id: lessonId }); // Use 'id' instead of '_id'
+                if (lesson) {
+                    if (lesson.availableInventory > 0) {
+                        // Reduce available inventory by 1
+                        const result = await lessonsCollection.updateOne(
+                            { id: lessonId }, // Use 'id' field to search
+                            { $inc: { availableInventory: -1 } }
+                        );
 
-        const updateResult = await lessonsCollection.updateOne(
-            { _id: lessonObjectId, availableInventory: { $gt: 0 } },
-            { $inc: { availableInventory: -1 } }
-        );
+                        console.log(`Update result for lesson ID ${lessonId}:`, result);
 
-        if (updateResult.matchedCount === 0) {
-            return res.status(400).send({ error: `Lesson ${lessonId} is out of stock` });
+                        if (result.modifiedCount === 0) {
+                            console.error(`Failed to update inventory for lesson ID: ${lessonId}`);
+                        } else {
+                            console.log(`Successfully updated inventory for lesson ID: ${lessonId}`);
+                        }
+                    } else {
+                        console.error(`Lesson with ID ${lessonId} is out of stock.`);
+                    }
+                } else {
+                    console.error(`Lesson with ID ${lessonId} not found.`);
+                }
+            } catch (error) {
+                console.error(`Error updating inventory for lesson ID ${lessonId}:`, error.message);
+            }
         }
-    }
-
 
         res.status(200).send({ message: "Order placed successfully" });
     } catch (error) {
@@ -200,6 +297,7 @@ app.post("collections/orders", async (req, res) => {
         res.status(500).send({ error: "Failed to place order" });
     }
 });
+
 
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
