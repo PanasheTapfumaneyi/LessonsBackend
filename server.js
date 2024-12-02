@@ -144,7 +144,7 @@ app.get('/search/:collectionName', async function (req, res, next) {
 // Post request to send an order to the database
 app.post("/collections/orders", async (req, res) => {
     console.log("Order request recieved");
-    const { name, phone, cart } = req.body;
+    const { name, phone, cart, itemCount } = req.body;
     if (!name || !phone || !cart || !Array.isArray(cart) || cart.length === 0) {
         console.error("Invalid order data");
         return res.status(400).send({ error: "Invalid order data" });
@@ -158,6 +158,7 @@ app.post("/collections/orders", async (req, res) => {
             customerName: name,
             customerPhone: phone,
             lessons: cart,
+            cartItems: itemCount
         };
         console.log("Inserting order:", order);
         await ordersCollection.insertOne(order);
