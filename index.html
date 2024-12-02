@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="lessons.js"></script>
+    <title>Lesson Store</title>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif; /* Apply Montserrat font */
+        }
+    </style>
+</head>
+<body>
+    <div class="h-screen bg-[url('/assets/class.jpg')] bg-cover bg-center" id="lessonStore">
+        <header class="bg-gray-100 shadow-md p-4">
+            <!-- Navigation Bar -->
+            <nav class="flex justify-between items-center">
+                <!-- Logo/Title -->
+                <h1 class="text-3xl font-bold text-black">{{ message }}</h1>
+                
+                <div class="flex items-center space-x-4">
+                    <ul class="flex text-lg font-semibold text-gray-700">
+                        <li><a href="#" @click="toggleCartPage" class="hover:text-blue-500"> Cart </a></li>
+                    </ul>
+                    <!-- Checkout Button -->
+                    <button 
+                        class="w-40 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" 
+                        v-if="itemsInCart > 0" @click="toggleCheckout"
+                    >
+                        {{ itemsInCart }}
+                        <span class="fa-solid fa-cart-plus"></span> Check Out
+                    </button>
+                    <button 
+                        class="w-40 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" 
+                        v-else disabled @click="toggleCheckout"
+                    >
+                        {{ itemsInCart }}
+                        <span class="fa-solid fa-cart-plus"></span> Check Out
+                    </button>
+                </div>
+            </nav>
+        </header>
+        
+        
+        <main>
+
+            <!-- Search Functionality -->
+<div class="mb-4">
+    <input 
+        type="text" 
+        v-model="searchQuery" 
+        placeholder="Search lessons..." 
+        class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+    />
+</div>
+
+           <!-- Product Section -->
+<div class="ml-96 w-2/3 rounded-lg mt-32 grid grid-cols-3 gap-1 auto-rows-max" v-if="showProducts">
+   
+
+        <!-- Sorting Criteria -->
+        <label>Sort by:</label>
+        <div>
+            <input type="radio" id="subject" value="title" v-model="sortCriteria">
+            <label for="subject">Subject</label>
+    
+            <input type="radio" id="location" value="location" v-model="sortCriteria">
+            <label for="location">Location</label>
+    
+            <input type="radio" id="price" value="price" v-model="sortCriteria">
+            <label for="price">Price</label>
+    
+            <input type="radio" id="availability" value="availableInventory" v-model="sortCriteria">
+            <label for="availability">Availability</label>
+        </div>
+    
+        <!-- Sorting Order (Ascending / Descending) -->
+        <div>
+            <button @click="sortOrder = 'asc'">Ascending</button>
+            <button @click="sortOrder = 'desc'">Descending</button>
+        </div>
+    <div class="bg-white w-10/12 m-2 p-1 rounded-lg" v-for="lesson in filteredLessons" :key="lesson.id">
+        <div>
+        <figure class="flex justify-center items-center">
+            <img :src="lesson.image" alt="Lesson Image" width="200" height="200">
+        </figure>
+        <h2 class="font-bold text-2xl">{{ lesson.title }}</h2>
+        <p>Description: {{ lesson.description }}</p>
+        <p>Location: {{ lesson.location }}</p>
+        <p>Price: £{{ lesson.price }}</p>
+
+        <div>
+            <span class="text-xl" v-for="n in lesson.rating">★</span>
+            <span v-for="n in 5 - lesson.rating">☆</span>
+        </div>
+        
+        <button 
+            class="w-40 px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" 
+            v-if="canAddToCart(lesson)" 
+            @click="addToCart(lesson)"
+        >
+            Add to Cart
+        </button>
+        <button class="w-40 px-6 py-2 bg-green-200 hover:bg-green-400 text-white font-bold rounded-lg shadow-md transition-all duration-200" v-else disabled>Add to Cart</button>
+
+        <span v-if="lessonsLeft(lesson) === 0">All sold out!</span>
+        <span v-else-if="lessonsLeft(lesson) < 5">Only {{ lessonsLeft(lesson) }} left!</span>
+        </div>
+    </div>
+</div>
+
+<!-- Cart Page -->
+<div 
+    v-if="showCartPage" 
+    class="flex flex-col justify-center items-center h-screen p-4"
+>
+    <h2 class="text-2xl font-bold mb-4">Your Cart</h2>
+    <div v-if="cartItems.length > 0" class="w-full max-w-md">
+        <div 
+            v-for="lesson in cartItems" 
+            :key="lesson.id" 
+            class="p-4 bg-white shadow-md rounded-lg mb-4"
+        >
+            <h3 class="text-xl font-bold">{{ lesson.title }}</h3>
+            <p>{{ lesson.description }}</p>
+            <p>{{ lesson.location }}</p>
+            <p>Price: £{{ lesson.price }}</p>
+            <button 
+                class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" 
+                @click="removeFromCart(lesson.id)"
+            >
+                Remove
+            </button>
+        </div>
+    </div>
+    <div v-else>
+        <p>Your cart is empty!</p>
+    </div>
+</div>
+            
+            
+    <!-- Checkout Section -->
+<div 
+v-if="!showProducts && !showCartPage" 
+class="flex flex-col justify-center items-center h-screen bg-gray-100 p-4"
+>
+<h1 class="text-2xl font-bold mb-6">Checkout Page</h1>
+<form class="w-full max-w-md space-y-4">
+    <div>
+        <label class="block font-semibold mb-1" for="name">Full Name:</label>
+        <input 
+            id="name" 
+            v-model.trim="order.name" 
+            @input="validateName"
+            class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+        />
+        <p v-if="nameError" class="text-red-500 text-sm">{{ nameError }}</p>
+    </div>
+    <div>
+        <label class="block font-semibold mb-1" for="phone">Phone Number:</label>
+        <input 
+            id="phone" 
+            v-model.trim="order.phone" 
+            @input="validatePhone"
+            type="text" 
+            class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+        />
+        <p v-if="phoneError" class="text-red-500 text-sm">{{ phoneError }}</p>
+    </div>
+
+    <div>
+        <h2 class="text-xl font-bold mb-2">Order Summary</h2>
+        <div 
+        v-for="lesson in cartItems" 
+        :key="lesson.id" 
+        class="p-4 bg-white shadow-md rounded-lg mb-4">     
+        <h3 class="text-xl font-bold">{{ lesson.title }}</h3>
+
+    </div>
+        <p>Lessons in Cart: {{ cart.length }} </p>
+        <p>Total Price: £{{ totalPrice }}</p>
+    </div>
+    <button
+        @click="placeOrder()" 
+        type="button"
+        :disabled="!isFormValid"
+        class="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
+    >
+        Checkout
+    </button>
+</form>
+</div>
+
+        </main>
+    </div>
+
+    <script>
+
+     let webstore =   new Vue({
+    el: '#lessonStore',
+    data: {
+        message: 'Welcome to the Lesson Store!',
+        showProducts: true,
+        showCartPage: false,
+        lessons: [],
+        cart: [],
+        order: {
+            name: '',
+            phone: '',
+        },
+        sortCriteria: 'subject', 
+        sortOrder: 'asc' ,
+        searchQuery: '',
+        searchResults: []
+    },
+    created: function() {
+                    
+                     fetch("http://localhost:4000/collections/lessons").then(
+                        function(response) {
+                             response.json().then(
+                                 function(json) {
+                                     //console.log(json);
+                                     // note that we used ‘webstore.products’
+                                    // instead of 'this.products’
+                                     webstore.lessons = json;
+                                     //console.log(webstore.products);
+                                     
+                                 }
+                             )
+                        }
+                     );
+        },
+    methods: {
+        validateName() {
+      // Allow only letters and spaces
+      const nameRegex = /^[a-zA-Z\s]*$/;
+      if (!nameRegex.test(this.order.name)) {
+        this.nameError = 'Name can only contain letters and spaces.';
+      } else {
+        this.nameError = '';
+      }
+    },
+    validatePhone() {
+      // Allow only digits
+      const phoneRegex = /^[0-9]*$/;
+      if (!phoneRegex.test(this.order.phone)) {
+        this.phoneError = 'Phone number can only contain numbers.';
+      } else {
+        this.phoneError = '';
+      }
+    },
+
+
+        toggleCheckout() {
+            this.showProducts = false;
+            this.showCartPage = false;
+        },
+        toggleCartPage() {
+            this.showCartPage = !this.showCartPage;
+            this.showProducts = !this.showProducts;
+        },
+        addToCart(lesson) {
+            this.cart.push(lesson.id);
+        },
+        removeFromCart(id) {
+            const index = this.cart.indexOf(id);
+            if (index !== -1) this.cart.splice(index, 1);
+        },
+        canAddToCart(lesson) {
+            return lesson.availableInventory > this.cartCount(lesson.id);
+        },
+        cartCount(id) {
+            return this.cart.filter(item => item === id).length;
+        },
+        lessonsLeft(lesson) {
+            return lesson.availableInventory - this.cartCount(lesson.id);
+        },
+        placeOrder() {
+        const orderDetails = {
+            name: this.order.name,
+            phone: this.order.phone,
+            cart: this.cart
+        };
+
+        fetch("http://localhost:4000/collections/orders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(orderDetails)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert("Order placed successfully!");
+                this.cart = [];
+                this.order = { name: '', phone: '' };
+                this.showProducts = true;
+                this.showCartPage = false;
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Failed to place order");
+        });
+    }
+
+    },
+    computed: {
+        itemsInCart() {
+            return this.cart.length || '';
+        },
+        cartItems() {
+            return this.cart.map(id => this.lessons.find(lesson => lesson.id === id));
+        },
+        isFormValid() {
+      return this.order.name.trim() !== "" && this.order.phone.trim() !== "" && this.nameError === '' && this.phoneError === '';
+    },
+    filteredLessons() {
+        return this.sortedLessons.filter(lesson => {
+            const searchQuery = this.searchQuery.toLowerCase();
+            return (
+                lesson.title.toLowerCase().includes(searchQuery) ||
+                lesson.description.toLowerCase().includes(searchQuery) ||
+                lesson.location.toLowerCase().includes(searchQuery) ||
+                lesson.price.toString().includes(searchQuery) ||
+                lesson.availableInventory.toString().includes(searchQuery)
+            );
+        });
+    },
+        sortedLessons() {
+            return [...this.lessons].sort((a, b) => {
+                let comparison = 0;
+                const field = this.sortCriteria;
+
+                // Handle the comparison for different fields
+                if (typeof a[field] === 'string') {
+                    comparison = a[field].localeCompare(b[field]);
+                } else {
+                    comparison = a[field] - b[field];
+                }
+
+                // Reverse comparison for descending order
+                return this.sortOrder === 'desc' ? -comparison : comparison;
+            });
+        },
+        totalPrice() {
+            return this.cart.reduce((sum, id) => {
+                const lesson = this.lessons.find(l => l.id === id);
+                return sum + lesson.price;
+            }, 0);
+        }
+    },
+    mounted() {
+        this.fetchLessons(); // Fetch all lessons on load
+    }
+});
+
+    </script>
+</body>
+</html>
